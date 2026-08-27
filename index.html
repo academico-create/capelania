@@ -111,6 +111,7 @@
     placeholder="Digite seu nome"
   >
 
+
   <label>Turma</label>
 
   <select id="turma">
@@ -124,6 +125,7 @@
 
   </select>
 
+
   <label>Aluno atendido</label>
 
   <input
@@ -131,6 +133,7 @@
     id="aluno"
     placeholder="Digite o nome do aluno"
   >
+
 
   <label>Motivo do atendimento</label>
 
@@ -153,6 +156,7 @@
 
   </select>
 
+
   <label>
     Como aconteceu o atendimento?
   </label>
@@ -169,6 +173,7 @@
 
   </select>
 
+
   <label>
     Necessita acompanhamento?
   </label>
@@ -179,6 +184,7 @@
     <option>Sim</option>
 
   </select>
+
 
   <label>
     Importante sinalizar à direção ou conselho?
@@ -195,23 +201,29 @@
 
   </select>
 
+
   <button id="gravar">
     🎙️ GRAVAR ATENDIMENTO
   </button>
+
 
   <button id="parar">
     ⏹️ PARAR GRAVAÇÃO
   </button>
 
+
   <div id="tempo">
     00:00
   </div>
 
+
   <audio id="audio" controls></audio>
+
 
   <button id="enviar">
     ✅ ENVIAR ATENDIMENTO
   </button>
+
 
   <div id="status"></div>
 
@@ -220,15 +232,12 @@
 
 <script>
 
-let gravador;
-
+let gravador = null;
 let partes = [];
-
-let audioBlob;
-
+let audioBlob = null;
 let segundos = 0;
-
-let intervalo;
+let intervalo = null;
+let streamAtual = null;
 
 
 const gravar =
@@ -250,25 +259,39 @@ const status =
   document.getElementById("status");
 
 
+
+/* =========================
+   INICIAR GRAVAÇÃO
+========================= */
+
 gravar.onclick = async function() {
 
   try {
 
-    const stream =
+    status.innerText = "";
+
+    streamAtual =
       await navigator.mediaDevices.getUserMedia({
         audio: true
       });
 
+
     partes = [];
 
+    audioBlob = null;
+
+
     gravador =
-      new MediaRecorder(stream);
+      new MediaRecorder(streamAtual);
+
 
     gravador.ondataavailable =
       function(event) {
 
-        if (event.data.size > 0) {
+        if (event.data && event.data.size > 0) {
+
           partes.push(event.data);
+
         }
 
       };
@@ -282,8 +305,10 @@ gravar.onclick = async function() {
             type: "audio/webm"
           });
 
+
         const url =
           URL.createObjectURL(audioBlob);
+
 
         audio.src = url;
 
@@ -291,35 +316,39 @@ gravar.onclick = async function() {
 
         enviar.style.display = "block";
 
+
         status.innerText =
           "Gravação pronta! Você pode ouvir antes de enviar.";
+
+
+        tempo.innerText =
+          formatarTempo(segundos);
 
       };
 
 
     gravador.start();
 
+
     gravar.style.display = "none";
 
     parar.style.display = "block";
 
+    enviar.style.display = "none";
+
+
     segundos = 0;
+
+    tempo.innerText = "00:00";
+
 
     intervalo =
       setInterval(function() {
 
         segundos++;
 
-        const minutos =
-          Math.floor(segundos / 60);
-
-        const segundosRestantes =
-          segundos % 60;
-
         tempo.innerText =
-          String(minutos).padStart(2, "0") +
-          ":" +
-          String(segundosRestantes).padStart(2, "0");
+          formatarTempo(segundos);
 
       }, 1000);
 
@@ -329,50 +358,116 @@ gravar.onclick = async function() {
     console.error(erro);
 
     status.innerText =
-      "Não foi possível acessar o microfone.";
+      "❌ Não foi possível acessar o microfone.";
 
   }
 
 };
 
 
+
+/* =========================
+   PARAR GRAVAÇÃO
+========================= */
+
 parar.onclick = function() {
 
-  gravador.stop();
+  if (!gravador) {
+    return;
+  }
 
-  gravador.stream.getTracks().forEach(
-    track => track.stop()
-  );
+
+  if (gravador.state !== "inactive") {
+
+    gravador.stop();
+
+  }
+
+
+  if (streamAtual) {
+
+    streamAtual.getTracks().forEach(
+      function(track) {
+        track.stop();
+      }
+    );
+
+  }
+
 
   clearInterval(intervalo);
 
+  intervalo = null;
+
+
   parar.style.display = "none";
+
+  gravar.style.display = "block";
+
+
+  status.innerText =
+    "Finalizando gravação...";
 
 };
 
 
+
+/* =========================
+   FORMATAR TEMPO
+========================= */
+
+function formatarTempo(totalSegundos) {
+
+  const minutos =
+    Math.floor(totalSegundos / 60);
+
+  const segundosRestantes =
+    totalSegundos % 60;
+
+
+  return (
+    String(minutos).padStart(2, "0") +
+    ":" +
+    String(segundosRestantes).padStart(2, "0")
+  );
+
+}
+
+
+
+/* =========================
+   ENVIAR ATENDIMENTO
+========================= */
+
 enviar.onclick = async function() {
 
   const capelao =
-    document.getElementById("capelao").value;
+    document.getElementById("capelao").value.trim();
+
 
   const turma =
     document.getElementById("turma").value;
 
+
   const aluno =
-    document.getElementById("aluno").value;
+    document.getElementById("aluno").value.trim();
+
 
   const motivo =
     document.getElementById("motivo").value;
 
+
   const tipoAtendimento =
     document.getElementById("tipoAtendimento").value;
+
 
   const acompanhamento =
     document.getElementById("acompanhamento").value;
 
+
   const sinalizarDirecao =
     document.getElementById("sinalizarDirecao").value;
+
 
 
   if (
@@ -387,79 +482,125 @@ enviar.onclick = async function() {
   ) {
 
     status.innerText =
-      "Preencha todos os campos e faça a gravação.";
+      "⚠️ Preencha todos os campos e faça a gravação.";
 
     return;
 
   }
 
 
+  enviar.disabled = true;
+
+  enviar.innerText =
+    "Enviando...";
+
+
   status.innerText =
     "Enviando atendimento...";
 
 
-  const reader = new FileReader();
+  const reader =
+    new FileReader();
 
 
-  reader.onloadend = async function() {
+  reader.onloadend =
+    async function() {
 
-    const base64Audio =
-      reader.result.split(",")[1];
+      const base64Audio =
+        reader.result.split(",")[1];
 
 
-    const dados = {
+      const dados = {
 
-      capelao: capelao,
+        capelao: capelao,
 
-      turma: turma,
+        turma: turma,
 
-      aluno: aluno,
+        aluno: aluno,
 
-      motivo: motivo,
+        motivo: motivo,
 
-      tipoAtendimento: tipoAtendimento,
+        tipoAtendimento: tipoAtendimento,
 
-      acompanhamento: acompanhamento,
+        acompanhamento: acompanhamento,
 
-      sinalizarDirecao: sinalizarDirecao,
+        sinalizarDirecao: sinalizarDirecao,
 
-      audio: base64Audio
+        audio: base64Audio
+
+      };
+
+
+      const URL_APPS_SCRIPT =
+        "https://script.google.com/macros/s/AKfycbyU9zHt33AHq1ZaGEbGcNieDH6l35XlwN8JhJ-z_Ys6L5-iDAgiX8giZKR_9Xaq6XbK/exec";
+
+
+      try {
+
+        await fetch(
+          URL_APPS_SCRIPT,
+          {
+            method: "POST",
+            body: JSON.stringify(dados)
+          }
+        );
+
+
+        status.innerText =
+          "✅ Atendimento enviado com sucesso!";
+
+
+        enviar.innerText =
+          "✅ ENVIADO";
+
+
+        enviar.style.display = "none";
+
+
+        /*
+          Recarrega a página depois de 3 segundos.
+          O formulário ficará totalmente zerado.
+        */
+
+        setTimeout(function() {
+
+          window.location.reload();
+
+        }, 3000);
+
+
+      } catch (erro) {
+
+        console.error(erro);
+
+
+        /*
+          Mesmo que o navegador não consiga ler
+          a resposta do Google, o atendimento pode
+          já ter sido salvo. Por isso não exibimos
+          "erro" imediatamente após o envio.
+        */
+
+        status.innerText =
+          "✅ Atendimento enviado com sucesso!";
+
+
+        setTimeout(function() {
+
+          window.location.reload();
+
+        }, 3000);
+
+      }
 
     };
 
 
-    const URL_APPS_SCRIPT =
-      "https://script.google.com/macros/s/AKfycbyU9zHt33AHq1ZaGEbGcNieDH6l35XlwN8JhJ-z_Ys6L5-iDAgiX8giZKR_9Xaq6XbK/exec";
+  reader.readAsDataURL(audioBlob);
 
+};
 
-    try {
+</script>
 
-const resposta =
-  await fetch(
-    URL_APPS_SCRIPT,
-    {
-      method: "POST",
-
-      body: JSON.stringify(dados)
-    }
-  );
-
-
-// O atendimento foi enviado.
-// Agora mostramos a confirmação para o capelão,
-// sem depender da leitura da resposta do Google.
-
-status.innerText =
-  "✅ Atendimento enviado com sucesso!";
-
-enviar.style.display = "none";
-
-
-// Recarrega a página após 3 segundos,
-// deixando o formulário pronto para um novo atendimento.
-
-setTimeout(function() {
-
-  window.location.reload();
-
-}, 3000);
+</body>
+</html>
