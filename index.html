@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <title>Registro de Capelania</title>
+
+  <style>
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 450px;
+      margin: auto;
+      background: white;
+      padding: 25px;
+      border-radius: 18px;
+      box-shadow: 0 4px 15px rgba(0,0,0,.1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    label {
+      display: block;
+      margin-top: 18px;
+      margin-bottom: 7px;
+      font-weight: bold;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 13px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 9px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 16px;
+      margin-top: 20px;
+      border: none;
+      border-radius: 10px;
+      font-size: 17px;
+      cursor: pointer;
+    }
+
+    #gravar {
+      background: #d93025;
+      color: white;
+    }
+
+    #parar {
+      background: #555;
+      color: white;
+      display: none;
+    }
+
+    #enviar {
+      background: #188038;
+      color: white;
+      display: none;
+    }
+
+    #tempo {
+      text-align: center;
+      font-size: 32px;
+      margin-top: 20px;
+    }
+
+    #status {
+      text-align: center;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    audio {
+      width: 100%;
+      margin-top: 20px;
+      display: none;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>📖 Registro de Capelania</h1>
+
+  <label>Nome do capelão</label>
+
+  <input
+    type="text"
+    id="capelao"
+    placeholder="Digite seu nome"
+  >
+
+  <label>Aluno atendido</label>
+
+  <input
+    type="text"
+    id="aluno"
+    placeholder="Digite o nome do aluno"
+  >
+
+  <label>Motivo do atendimento</label>
+
+  <select id="motivo">
+
+    <option value="">
+      Selecione
+    </option>
+
+    <option>Vida espiritual</option>
+    <option>Família</option>
+    <option>Relacionamentos</option>
+    <option>Vida emocional</option>
+    <option>Vida ministerial</option>
+    <option>Estudos</option>
+    <option>Conflitos</option>
+    <option>Comportamento</option>
+    <option>Tomada de decisão</option>
+    <option>Outro</option>
+
+  </select>
+
+  <label>
+    Necessita acompanhamento?
+  </label>
+
+  <select id="acompanhamento">
+
+    <option>Não</option>
+    <option>Sim</option>
+
+  </select>
+
+  <button id="gravar">
+    🎙️ GRAVAR ATENDIMENTO
+  </button>
+
+  <button id="parar">
+    ⏹️ PARAR GRAVAÇÃO
+  </button>
+
+  <div id="tempo">
+    00:00
+  </div>
+
+  <audio id="audio" controls></audio>
+
+  <button id="enviar">
+    ✅ ENVIAR ATENDIMENTO
+  </button>
+
+  <div id="status"></div>
+
+</div>
+
+
+<script>
+
+let gravador;
+
+let partes = [];
+
+let audioBlob;
+
+let segundos = 0;
+
+let intervalo;
+
+
+const gravar =
+  document.getElementById("gravar");
+
+const parar =
+  document.getElementById("parar");
+
+const enviar =
+  document.getElementById("enviar");
+
+const audio =
+  document.getElementById("audio");
+
+const tempo =
+  document.getElementById("tempo");
+
+const status =
+  document.getElementById("status");
+
+
+gravar.onclick = async function() {
+
+  try {
+
+    const stream =
+      await navigator.mediaDevices.getUserMedia({
+        audio: true
+      });
+
+    partes = [];
+
+    gravador =
+      new MediaRecorder(stream);
+
+    gravador.ondataavailable =
+      function(event) {
+
+        if (event.data.size > 0) {
+          partes.push(event.data);
+        }
+
+      };
+
+
+    gravador.onstop =
+      function() {
+
+        audioBlob =
+          new Blob(partes, {
+            type: "audio/webm"
+          });
+
+        const url =
+          URL.createObjectURL(audioBlob);
+
+        audio.src = url;
+
+        audio.style.display = "block";
+
+        enviar.style.display = "block";
+
+        status.innerText =
+          "Gravação pronta! Você pode ouvir antes de enviar.";
+
+      };
+
+
+    gravador.start();
+
+    gravar.style.display = "none";
+
+    parar.style.display = "block";
+
+    segundos = 0;
+
+    intervalo =
+      setInterval(function() {
+
+        segundos++;
+
+        const minutos =
+          Math.floor(segundos / 60);
+
+        const segundosRestantes =
+          segundos % 60;
+
+        tempo.innerText =
+          String(minutos).padStart(2, "0") +
+          ":" +
+          String(segundosRestantes).padStart(2, "0");
+
+      }, 1000);
+
+
+  } catch (erro) {
+
+    console.error(erro);
+
+    status.innerText =
+      "Não foi possível acessar o microfone.";
+
+  }
+
+};
+
+
+parar.onclick = function() {
+
+  gravador.stop();
+
+  gravador.stream.getTracks().forEach(
+    track => track.stop()
+  );
+
+  clearInterval(intervalo);
+
+  parar.style.display = "none";
+
+};
+
+
+enviar.onclick = function() {
+
+  status.innerText =
+    "Teste concluído! A gravação está funcionando.";
+
+};
+
+
+</script>
+
+</body>
+</html>
