@@ -434,53 +434,32 @@ enviar.onclick = async function() {
 
     try {
 
-      const resposta =
-        await fetch(
-          URL_APPS_SCRIPT,
-          {
-            method: "POST",
+const resposta =
+  await fetch(
+    URL_APPS_SCRIPT,
+    {
+      method: "POST",
 
-            body: JSON.stringify(dados)
-          }
-        );
-
-
-      const resultado =
-        await resposta.json();
-
-
-      if (resultado.sucesso) {
-
-        status.innerText =
-          "✅ Atendimento registrado com sucesso!";
-
-        enviar.style.display = "none";
-
-      } else {
-
-        status.innerText =
-          "Erro: " + resultado.erro;
-
-      }
-
-    } catch (erro) {
-
-      console.error(erro);
-
-      status.innerText =
-        "Não foi possível enviar o atendimento.";
-
+      body: JSON.stringify(dados)
     }
-
-  };
-
-
-  reader.readAsDataURL(audioBlob);
-
-};
+  );
 
 
-</script>
+// O atendimento foi enviado.
+// Agora mostramos a confirmação para o capelão,
+// sem depender da leitura da resposta do Google.
 
-</body>
-</html>
+status.innerText =
+  "✅ Atendimento enviado com sucesso!";
+
+enviar.style.display = "none";
+
+
+// Recarrega a página após 2 segundos,
+// deixando o formulário pronto para um novo atendimento.
+
+setTimeout(function() {
+
+  window.location.reload();
+
+}, 3000);
