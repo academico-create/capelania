@@ -306,13 +306,110 @@ parar.onclick = function() {
 
 };
 
+enviar.onclick = async function() {
 
-enviar.onclick = function() {
+  const capelao =
+    document.getElementById("capelao").value;
+
+  const aluno =
+    document.getElementById("aluno").value;
+
+  const motivo =
+    document.getElementById("motivo").value;
+
+  const acompanhamento =
+    document.getElementById("acompanhamento").value;
+
+
+  if (!capelao || !aluno || !motivo || !audioBlob) {
+
+    status.innerText =
+      "Preencha todos os campos e faça a gravação.";
+
+    return;
+
+  }
+
 
   status.innerText =
-    "Teste concluído! A gravação está funcionando.";
+    "Enviando atendimento...";
+
+
+  const reader = new FileReader();
+
+
+  reader.onloadend = async function() {
+
+    const base64Audio =
+      reader.result.split(",")[1];
+
+
+    const dados = {
+
+      capelao: capelao,
+
+      aluno: aluno,
+
+      motivo: motivo,
+
+      acompanhamento: acompanhamento,
+
+      audio: base64Audio
+
+    };
+
+
+    const URL_APPS_SCRIPT =
+      "https://script.google.com/macros/s/AKfycbyU9zHt33AHq1ZaGEbGcNieDH6l35XlwN8JhJ-z_Ys6L5-iDAgiX8giZKR_9Xaq6XbK/exec";
+
+
+    try {
+
+      const resposta =
+        await fetch(
+          URL_APPS_SCRIPT,
+          {
+            method: "POST",
+
+            body: JSON.stringify(dados)
+          }
+        );
+
+
+      const resultado =
+        await resposta.json();
+
+
+      if (resultado.sucesso) {
+
+        status.innerText =
+          "✅ Atendimento registrado com sucesso!";
+
+        enviar.style.display = "none";
+
+      } else {
+
+        status.innerText =
+          "Erro: " + resultado.erro;
+
+      }
+
+    } catch (erro) {
+
+      console.error(erro);
+
+      status.innerText =
+        "Não foi possível enviar o atendimento.";
+
+    }
+
+  };
+
+
+  reader.readAsDataURL(audioBlob);
 
 };
+
 
 
 </script>
