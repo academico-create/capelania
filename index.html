@@ -111,6 +111,19 @@
     placeholder="Digite seu nome"
   >
 
+  <label>Turma</label>
+
+  <select id="turma">
+
+    <option value="">
+      Selecione
+    </option>
+
+    <option>Turma 14</option>
+    <option>Turma 15</option>
+
+  </select>
+
   <label>Aluno atendido</label>
 
   <input
@@ -141,6 +154,22 @@
   </select>
 
   <label>
+    Como aconteceu o atendimento?
+  </label>
+
+  <select id="tipoAtendimento">
+
+    <option value="">
+      Selecione
+    </option>
+
+    <option>Agendado</option>
+    <option>Chamado pelo capelão ou time</option>
+    <option>Retorno/acompanhamento</option>
+
+  </select>
+
+  <label>
     Necessita acompanhamento?
   </label>
 
@@ -148,6 +177,21 @@
 
     <option>Não</option>
     <option>Sim</option>
+
+  </select>
+
+  <label>
+    Importante sinalizar à direção ou conselho?
+  </label>
+
+  <select id="sinalizarDirecao">
+
+    <option value="">
+      Selecione
+    </option>
+
+    <option>Sim</option>
+    <option>Não</option>
 
   </select>
 
@@ -306,10 +350,14 @@ parar.onclick = function() {
 
 };
 
+
 enviar.onclick = async function() {
 
   const capelao =
     document.getElementById("capelao").value;
+
+  const turma =
+    document.getElementById("turma").value;
 
   const aluno =
     document.getElementById("aluno").value;
@@ -317,11 +365,26 @@ enviar.onclick = async function() {
   const motivo =
     document.getElementById("motivo").value;
 
+  const tipoAtendimento =
+    document.getElementById("tipoAtendimento").value;
+
   const acompanhamento =
     document.getElementById("acompanhamento").value;
 
+  const sinalizarDirecao =
+    document.getElementById("sinalizarDirecao").value;
 
-  if (!capelao || !aluno || !motivo || !audioBlob) {
+
+  if (
+    !capelao ||
+    !turma ||
+    !aluno ||
+    !motivo ||
+    !tipoAtendimento ||
+    !acompanhamento ||
+    !sinalizarDirecao ||
+    !audioBlob
+  ) {
 
     status.innerText =
       "Preencha todos os campos e faça a gravação.";
@@ -348,11 +411,17 @@ enviar.onclick = async function() {
 
       capelao: capelao,
 
+      turma: turma,
+
       aluno: aluno,
 
       motivo: motivo,
 
+      tipoAtendimento: tipoAtendimento,
+
       acompanhamento: acompanhamento,
+
+      sinalizarDirecao: sinalizarDirecao,
 
       audio: base64Audio
 
@@ -409,7 +478,6 @@ enviar.onclick = async function() {
   reader.readAsDataURL(audioBlob);
 
 };
-
 
 
 </script>
